@@ -10,3 +10,4 @@ torchmetrics
 opencv-python
 opencv-python-headless
 matplotlib
+nibabel
