@@ -1,4 +1,3 @@
-
 torch
 blobfile
 numpy
@@ -9,4 +8,5 @@ tensorboard
 ml_collections
 torchmetrics
 opencv-python
+opencv-python-headless
 matplotlib
