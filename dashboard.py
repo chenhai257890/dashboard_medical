@@ -2,34 +2,256 @@ import streamlit as st
 import cv2
 import numpy as np
 import pandas as pd
+import os
+import random
+import monai.transforms as transforms
+from os.path import join
+from pathlib import Path
+from scipy.stats import multivariate_normal
+from torch.utils.data import Dataset, DataLoader
+import torch as th
+import ml_collections
+import unet
+import blobfile as bf
+from test_model import iter_mask_refinement
+import nibabel as nib
+import matplotlib.pyplot as plt
+# ---------------------------- 函数功能区 -----------------------------
+# 1、主函数
+def normalize(img, _min=None, _max=None):
+    _min = img.min()
+    _max = img.max()
+    normalized_img = (img - _min) / (_max - _min)
+    return normalized_img
+def get_default_configs():
+    config = ml_collections.ConfigDict()
+    config.device = th.device('cuda') if th.cuda.is_available() else th.device('cpu')
+    config.seed = 1
+    config.data = data = ml_collections.ConfigDict()
+    data.path = "/home/some5338/Documents/data/brats"
+    data.sequence_translation = False
+    data.healthy_data_percentage = None
 
-st.set_page_config(page_title="Brain Lesion Dashboard", layout="wide")
+    ## model config
+    config.model = model = ml_collections.ConfigDict()
+    model.image_size = 128
+    model.num_input_channels = 1 
+    model.num_channels = 32
+    model.num_res_blocks = 2
+    model.num_heads = 1
+    model.num_heads_upsample = -1
+    model.num_head_channels = -1
+    model.attention_resolutions = "32,16,8"
+
+    attention_ds = []
+    if model.attention_resolutions != "":
+        for res in model.attention_resolutions.split(","):
+            attention_ds.append(model.image_size // int(res))
+    model.attention_ds = attention_ds
+
+    model.channel_mult = {64:(1, 2, 3, 4), 128:(1, 1, 2, 3, 4)}[model.image_size]
+    model.dropout = 0.1
+    model.use_checkpoint = False
+    model.use_scale_shift_norm = True
+    model.resblock_updown = True
+    model.use_fp16 = False
+    model.use_new_attention_order = False
+    model.dims = 2
+
+    # score model training
+    config.model.training = training_model = ml_collections.ConfigDict()
+    training_model.lr = 1e-4
+    training_model.weight_decay = 0.00
+    training_model.lr_decay_steps = 150000
+    training_model.lr_decay_factor = 0.1
+    training_model.batch_size = 32
+    training_model.ema_rate = "0.9999"  # comma-separated list of EMA values
+    training_model.log_interval = 100
+    training_model.save_interval = 5000
+    training_model.use_fp16 = model.use_fp16
+    training_model.fp16_scale_growth = 1e-3
+    training_model.iterations = 150000
+
+    config.testing = testing = ml_collections.ConfigDict()
+    testing.batch_size = 32
+    testing.task = 'inpainting'
+
+    return config
+# datasets
+
+def get_brats2021_train_transform_abnormalty(image_size):
+    base_transform = [
+        transforms.EnsureChannelFirstd(
+            keys=['input', 'brainmask', 'seg', 'gauss_mask'], channel_dim='no_channel'),
+        transforms.Resized(
+            keys=['input', 'brainmask', 'seg', 'gauss_mask'],
+            spatial_size=(image_size, image_size)),
+    ]
+    return transforms.Compose(base_transform)
+
+
+class BraTS2021Dataset(Dataset):
+    def __init__(self, images, transforms=None):
+        super(BraTS2021Dataset, self).__init__()
+        self.images = images
+        self.transforms = transforms
+
+    def __getitem__(self, index: int) -> tuple:
+        image = self.images[index]
+        brain_mask = (image > 0).astype(np.uint8)
+        item = self.transforms(
+            {'input': input, 'brainmask': brain_mask})
+
+        return item
+
+    def __len__(self):
+        return len(self.images)
+
+
+# dataloader
+def seed_worker(worker_id):
+    np.random.seed(worker_id)
+    random.seed(0)
+
+g = th.Generator()
+g.manual_seed(0)
+def get_data_loader_brats(mod, path, batch_size, image_size, split_set: str = 'train'):
+
+    assert split_set in ["train", "val", "test"]
+    default_kwargs = {"drop_last": True, "batch_size": batch_size, "pin_memory": False, "num_workers": 0,
+                    "worker_init_fn": seed_worker, "generator": g, }
+    if split_set == "test":
+        patient_dir = os.path.join(path, 'test')
+        default_kwargs["shuffle"] = False
+    elif split_set == "val":
+        patient_dir = os.path.join(path, 'val')
+        default_kwargs["shuffle"] = False
+    else:
+        patient_dir = os.path.join(path, 'train')
+        default_kwargs["shuffle"] = True
+        default_kwargs["num_workers"] = 0
+    transforms = get_brats2021_train_transform_abnormalty(image_size)
+    dataset = BraTS2021Dataset(
+        data_root=patient_dir,
+        mode='train',
+        input_modality=mod,
+        transforms=transforms)
+
+    #print(f"dataset lenght: {len(dataset)}")
+    return th.utils.data.DataLoader(dataset, **default_kwargs)
+# Model
+def create_model(config: ml_collections.ConfigDict, image_level_cond):
+    return unet.UNetModel(
+        in_channels=config.model.num_input_channels,
+        model_channels=config.model.num_channels,
+        out_channels=config.model.num_input_channels,
+        num_res_blocks=config.model.num_res_blocks,
+        attention_resolutions=tuple(config.model.attention_ds),
+        dropout=config.model.dropout,
+        channel_mult=config.model.channel_mult,
+        dims=config.model.dims,
+        use_checkpoint=False,
+        use_fp16=False,
+        num_heads=config.model.num_heads,
+        num_head_channels=config.model.num_head_channels,
+        num_heads_upsample=config.model.num_heads_upsample,
+        use_scale_shift_norm=config.model.use_scale_shift_norm,
+        resblock_updown=config.model.resblock_updown,
+        image_level_cond=image_level_cond,
+    )
+def main(images):
+    use_gpus = 0
+    config = get_default_configs()
+    experiment_name_first_iter = "first_iter_brats_t1"
+    experiment_name_masked_autoencoder = "masked_autoencoder_brats_t1"
+    input_mod = 't1'
+    default_kwargs = {"drop_last": True, "batch_size": 1, "pin_memory": False, "num_workers": 0, "shuffle": False,
+                    "worker_init_fn": seed_worker, "generator": g, }
+    transforms = get_brats2021_train_transform_abnormalty(config.model.image_size)
+    dataset = BraTS2021Dataset(
+        images=images,
+        transforms=transforms)
+    test_loader = th.utils.data.DataLoader(dataset, **default_kwargs)
+    model_first_iter = create_model(config, image_level_cond=False)
+    model_masked_autoencoder = create_model(config, image_level_cond=True)
+
+    filename = "model090000.pt"
+    path_first_iter = bf.join('./model_save', experiment_name_first_iter, filename)
+    path_masked_autoencoder = bf.join('./model_save', experiment_name_masked_autoencoder, filename)
+    model_first_iter.load_state_dict(
+        th.load(path_first_iter, map_location=th.device('cuda'))
+    )
+    model_first_iter.to(th.device('cuda'))
+    model_masked_autoencoder.load_state_dict(
+        th.load(path_masked_autoencoder, map_location=th.device('cuda'))
+    )
+    model_masked_autoencoder.to(th.device('cuda'))
+
+    if config.model.use_fp16:
+        model_first_iter.convert_to_fp16()
+
+    model_first_iter.eval()
+    model_masked_autoencoder.eval()
+
+    num_sample = 0
+    img_pred_mask_all = np.zeros(
+        (len(test_loader.dataset), config.model.num_input_channels * 1, config.model.image_size,
+         config.model.image_size))
+    brain_mask_all = np.zeros((len(test_loader.dataset), config.model.num_input_channels, config.model.image_size, config.model.image_size))
+
+
+    num_iter = 0
+    for test_data_dict in enumerate(test_loader):
+        test_data_input = test_data_dict[1].pop('input').cuda()
+        brain_mask = test_data_dict[1].pop('brainmask').cuda()
+        
+        final_mask, final_reconstruction = iter_mask_refinement(
+                model_masked_autoencoder, model_first_iter, test_data_input,
+                brain_mask, experiment_name_masked_autoencoder
+            )
+        img_pred_mask_all[num_sample:num_sample + test_data_input.shape[0]] = final_mask.cpu().numpy()
+        num_sample += test_data_input.shape[0]
+
+    return final_mask
+
+
+
+
+
+
+st.set_page_config(page_title="Brain Lesion Detection Dashboard", layout="wide")
 
 # ---------------------------- UI -----------------------------
 st.title("🧠 Brain MRI Lesion Detection Dashboard")
 
 # Sidebar
-uploaded_file = st.sidebar.file_uploader("上传 MRI 图像", type=["png", "jpg", "jpeg"])
-threshold = st.sidebar.slider("阈值参数", 0, 255, 120)
-kernel_size = st.sidebar.slider("形态学核大小", 1, 15, 5)
+uploaded_file = st.sidebar.file_uploader("上传 .nii.gz 文件", type=["nii.gz"])
+# 读取医学图像并显示切片
+if uploaded_file:
+    # 读取 NIfTI 文件
+    nii_image = nib.load(uploaded_file)
+    img_data = nii_image.get_fdata()  # 获取图像数据
+    img_data = np.flip(img_data, axis=0)  # 可选：如果需要翻转维度，方便查看
+     # 获取图像的三个维度
+    depth, height, width = img_data.shape
+    st.write(f"图像维度: {depth} x {height} x {width}")
+ # 选择切片方向
+    direction = st.radio("选择切片方向", ("横截面", "纵截面", "冠状面"))
 
-# ----------------------- Image Pipeline -----------------------
-def detect_lesion(img):
-    # 去噪
-    denoised = cv2.medianBlur(img, 5)
-
-    # 阈值
-    _, binary = cv2.threshold(denoised, threshold, 255, cv2.THRESH_BINARY)
-
-    # 形态学
-    kernel = np.ones((kernel_size, kernel_size), np.uint8)
-    morph = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
-
-    # 叠加伪彩色
-    overlay = cv2.applyColorMap(morph, cv2.COLORMAP_JET)
-
-    return denoised, binary, morph, overlay
-
+    # ------------------------ 切片位置滑块 ------------------------
+    if direction == "横截面":
+        slice_num = st.slider("选择横截面位置", 0, depth - 1, depth // 2)
+        slice_data = img_data[slice_num, :, :]
+    elif direction == "纵截面":
+        slice_num = st.slider("选择纵截面位置", 0, height - 1, height // 2)
+        slice_data = img_data[:, slice_num, :]
+    else:  # 冠状面
+        slice_num = st.slider("选择冠状面位置", 0, width - 1, width // 2)
+        slice_data = img_data[:, :, slice_num]
+# ---------------------- Bottom Gallery -------------------------
+    st.subheader(f"当前 {direction} 切片位置: {slice_num}")
+    plt.imshow(slice_data.T, cmap="gray")  # 转置以正确显示
+    st.pyplot(plt)
 # ---------------------- Main Layout --------------------------
 col1, col2 = st.columns([2, 1])
 
@@ -37,39 +259,15 @@ with col1:
     st.subheader("病例检测结果展示")
 
     if uploaded_file:
-        file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-        img = cv2.imdecode(file_bytes, cv2.IMREAD_GRAYSCALE)
+        mask = main(slice_data)
+        
 
-        denoised, binary, morph, overlay = detect_lesion(img)
+        
 
         # 两列大图
         c1, c2 = st.columns(2)
-        c1.image(img, caption="原始 MRI", use_column_width=True)
-        c2.image(overlay, caption="病灶叠加图", use_column_width=True)
+        c1.image(slice_data, caption="原始 MRI", use_column_width=True)
+        c2.image(mask, caption="病灶掩码", use_column_width=True)
 
-        st.subheader("处理流程")
-        st.image([denoised, binary, morph], caption=["去噪", "阈值分割", "形态学"], width=200)
 
-with col2:
-    st.subheader("统计分析")
-    
-    # 模拟多例数据（你之后可以替换为真实数据）
-    lesion_areas = np.random.randint(1000, 9000, size=50)
-    
-    st.metric("平均病灶面积", f"{np.mean(lesion_areas):.0f} px²")
-    st.metric("最大病灶面积", f"{np.max(lesion_areas):.0f} px²")
-    st.metric("阳性比例", "28%")
 
-    st.bar_chart(lesion_areas)
-
-    # 阳性 vs 阴性示例
-    pos_neg = pd.DataFrame({"label": ["Positive", "Negative"], 
-                            "count": [14, 36]})
-    st.bar_chart(pos_neg.set_index("label"))
-
-# ---------------------- Bottom Gallery -------------------------
-st.subheader("批量检测缩略图展示（示例）")
-
-gallery_cols = st.columns(6)
-for i, col in enumerate(gallery_cols):
-    col.image(np.random.randint(0, 255, (240, 240)), caption=f"Case #{i+1}", width=120)
