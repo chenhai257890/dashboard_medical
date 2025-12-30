@@ -230,7 +230,7 @@ uploaded_file = st.sidebar.file_uploader("上传 .nii.gz 文件", type=["nii.gz"
 # 读取医学图像并显示切片
 if uploaded_file:
     # 读取 NIfTI 文件
-    nii_image = nib.load(io.BytesIO(uploaded_file.read())
+    nii_image = nib.load(io.BytesIO(uploaded_file.read()))
     img_data = nii_image.get_fdata()  # 获取图像数据
     img_data = np.flip(img_data, axis=0)  # 可选：如果需要翻转维度，方便查看
      # 获取图像的三个维度
@@ -269,6 +269,7 @@ with col1:
         c1, c2 = st.columns(2)
         c1.image(slice_data, caption="原始 MRI", use_column_width=True)
         c2.image(mask, caption="病灶掩码", use_column_width=True)
+
 
 
 
