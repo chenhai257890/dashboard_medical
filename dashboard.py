@@ -224,51 +224,105 @@ st.set_page_config(page_title="Brain Lesion Detection Dashboard", layout="wide")
 
 # ---------------------------- UI -----------------------------
 st.title("🧠 Brain MRI Lesion Detection Dashboard")
+# 创建两列布局：左边为上传区域，右边为展示区域
+col1, col2 = st.columns([2, 3])
 
-# Sidebar
-uploaded_file = st.sidebar.file_uploader("上传 .nii.gz 文件", type=["nii.gz"])
-# 读取医学图像并显示切片
-if uploaded_file:
-    # 读取 NIfTI 文件
-    nii_image = nib.load(io.BytesIO(uploaded_file.read()))
-    img_data = nii_image.get_fdata()  # 获取图像数据
-    img_data = np.flip(img_data, axis=0)  # 可选：如果需要翻转维度，方便查看
-     # 获取图像的三个维度
-    depth, height, width = img_data.shape
-    st.write(f"图像维度: {depth} x {height} x {width}")
- # 选择切片方向
-    direction = st.radio("选择切片方向", ("横截面", "纵截面", "冠状面"))
-
-    # ------------------------ 切片位置滑块 ------------------------
-    if direction == "横截面":
-        slice_num = st.slider("选择横截面位置", 0, depth - 1, depth // 2)
-        slice_data = img_data[slice_num, :, :]
-    elif direction == "纵截面":
-        slice_num = st.slider("选择纵截面位置", 0, height - 1, height // 2)
-        slice_data = img_data[:, slice_num, :]
-    else:  # 冠状面
-        slice_num = st.slider("选择冠状面位置", 0, width - 1, width // 2)
-        slice_data = img_data[:, :, slice_num]
-# ---------------------- Bottom Gallery -------------------------
-    st.subheader(f"当前 {direction} 切片位置: {slice_num}")
-    plt.imshow(slice_data.T, cmap="gray")  # 转置以正确显示
-    st.pyplot(plt)
-# ---------------------- Main Layout --------------------------
-col1, col2 = st.columns([2, 1])
-
+# ---------------------------- 左侧区域 ----------------------------
 with col1:
-    st.subheader("病例检测结果展示")
+    # 文件上传控件
+    uploaded_file = st.file_uploader("上传 .nii.gz 文件", type=["nii.gz"])
 
+    # 切片位置滑块
     if uploaded_file:
-        mask = main(slice_data)
-        
+        # 读取 NIfTI 文件
+        file_bytes = uploaded_file.read()
+        file_like_object = io.BytesIO(file_bytes)  # 将字节流转换为 BytesIO 对象
+        nii_image = nib.load(file_like_object)
+        img_data = nii_image.get_fdata()  # 获取图像数据
 
-        
+        # 获取图像的维度
+        depth, height, width = img_data.shape
+        st.write(f"图像维度: {depth} x {height} x {width}")
 
-        # 两列大图
-        c1, c2 = st.columns(2)
-        c1.image(slice_data, caption="原始 MRI", use_column_width=True)
-        c2.image(mask, caption="病灶掩码", use_column_width=True)
+        # 切片位置滑块（控制当前选择的切片）
+        direction = st.radio("选择切片方向", ("横截面", "纵截面", "冠状面"))
+        
+        if direction == "横截面":
+            slice_num = st.slider("选择横截面位置", 0, depth - 1, depth // 2)
+            slice_data = img_data[slice_num, :, :]
+        elif direction == "纵截面":
+            slice_num = st.slider("选择纵截面位置", 0, height - 1, height // 2)
+            slice_data = img_data[:, slice_num, :]
+        else:  # 冠状面
+            slice_num = st.slider("选择冠状面位置", 0, width - 1, width // 2)
+            slice_data = img_data[:, :, slice_num]
+
+        # 显示切片信息
+        st.write(f"当前 {direction} 切片位置: {slice_num}")
+        plt.imshow(slice_data.T, cmap="gray")  # 转置显示
+        st.pyplot(plt)
+
+# ---------------------------- 右侧区域 ----------------------------
+with col2:
+    # -------------------- 上半部分：展示病灶掩膜 --------------------
+    st.subheader("病灶检测")
+    
+    # 病灶检测按钮
+    if uploaded_file:
+        if st.button("生成病灶掩膜"):
+            # 假设你有一个封装好的病灶检测函数 `detect_lesion` 
+            lesion_mask = main(slice_data)  # 你需要提供该函数
+
+            # 显示病灶掩膜
+            st.subheader("病灶检测结果")
+            plt.imshow(lesion_mask.T, cmap="hot")  # 热力图表示病灶掩膜
+            st.pyplot(plt)
+            
+            # 显示原图与病灶掩膜叠加图
+            st.subheader("原图与病灶掩膜叠加")
+            overlay = np.copy(slice_data)
+            overlay[lesion_mask == 1] = 255  # 将病灶区域标记为 255
+            plt.imshow(overlay.T, cmap="hot")
+            st.pyplot(plt)
+
+    else:
+        st.write("请先上传医学图像文件")
+
+    # -------------------- 下半部分：展示不同方向的切片 --------------------
+    if uploaded_file:
+        st.subheader(f"显示 {direction} 切片位置: {slice_num} 的三个方向切片")
+
+        # 显示由滑块控制的切片位置的三个方向图
+        if direction == "横截面":
+            coronal_slice = img_data[:, slice_num, :]
+            sagittal_slice = img_data[slice_num, :, :]
+        elif direction == "纵截面":
+            coronal_slice = img_data[:, slice_num, :]
+            sagittal_slice = img_data[slice_num, :, :]
+        else:  # 冠状面
+            coronal_slice = img_data[:, :, slice_num]
+            sagittal_slice = img_data[slice_num, :, :]
+
+        # 显示其他方向的切片
+        st.subheader("横截面")
+        plt.imshow(sagittal_slice.T, cmap="gray")
+        st.pyplot(plt)
+        
+        st.subheader("纵截面")
+        plt.imshow(coronal_slice.T, cmap="gray")
+        st.pyplot(plt)
+        
+        st.subheader("冠状面")
+        plt.imshow(img_data[:, :, slice_num].T, cmap="gray")
+        st.pyplot(plt)
+
+# ---------------------------- 病灶检测函数 ----------------------------
+# 示例病灶检测函数（你应该根据实际算法进行修改）
+def detect_lesion(slice_data):
+    # 这里是一个简单的阈值检测，假设病灶区域的像素值大于 150
+    threshold = 150
+    lesion_mask = slice_data > threshold
+    return lesion_mask.astype(np.uint8)  # 返回二进制掩膜
 
 
 
