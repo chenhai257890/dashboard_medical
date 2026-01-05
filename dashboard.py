@@ -236,7 +236,7 @@ with col1:
         # 读取 NIfTI 文件
         file_bytes = uploaded_file.read()
         file_like_object = io.BytesIO(file_bytes)  # 将字节流转换为 BytesIO 对象
-        nii_image = nib.load(file_like_object)
+        nii_image = nib.load(fileobj=file_like_object)
         img_data = nii_image.get_fdata()  # 获取图像数据
 
         # 获取图像的维度
