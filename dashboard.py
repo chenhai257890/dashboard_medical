@@ -1,5 +1,4 @@
 import streamlit as st
-import cv2
 import numpy as np
 import pandas as pd
 import os
@@ -316,13 +315,6 @@ with col2:
         plt.imshow(img_data[:, :, slice_num].T, cmap="gray")
         st.pyplot(plt)
 
-# ---------------------------- 病灶检测函数 ----------------------------
-# 示例病灶检测函数（你应该根据实际算法进行修改）
-def detect_lesion(slice_data):
-    # 这里是一个简单的阈值检测，假设病灶区域的像素值大于 150
-    threshold = 150
-    lesion_mask = slice_data > threshold
-    return lesion_mask.astype(np.uint8)  # 返回二进制掩膜
 
 
 
