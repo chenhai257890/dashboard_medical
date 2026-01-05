@@ -224,7 +224,7 @@ st.set_page_config(page_title="Brain Lesion Detection Dashboard", layout="wide")
 # ---------------------------- UI -----------------------------
 st.title("🧠 Brain MRI Lesion Detection Dashboard")
 # 创建两列布局：左边为上传区域，右边为展示区域
-col1, col2 = st.columns([2, 3])
+col1, col2 = st.columns([1, 3])
 
 # ---------------------------- 左侧区域 ----------------------------
 with col1:
@@ -234,8 +234,8 @@ with col1:
     # 切片位置滑块
     if uploaded_file:
         # 读取 NIfTI 文件
-        file_bytes = uploaded_file.read()
-        nii_image = nib.Nifti1Image.from_bytes(file_bytes)
+        file_path = os.path.join("./data", uploaded_file.name)
+        nii_image = nib.load(file_path)
         img_data = nii_image.get_fdata()  # 获取图像数据
 
         # 获取图像的维度
