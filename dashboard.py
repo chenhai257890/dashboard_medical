@@ -253,7 +253,7 @@ with col2:
     # -------------------- 上半部分：展示病灶掩膜 --------------------
     left, middle1, middle2, right = st.columns(4, vertical_alignment="center")
     left.subheader("当前切片")
-    middle1.button("Detect")
+    b = middle1.button("Detect")
     middle2.subheader("病灶检测结果")
     right.subheader("叠加图")
     if uploaded_file:
@@ -261,7 +261,7 @@ with col2:
         plt.imshow(slice_data.T, cmap="gray")
         left.pyplot(plt)
    
-        if middle1.button("Detect"):
+        if b:
         # 假设你有一个封装好的病灶检测函数 `detect_lesion` 
             lesion_mask = main(slice_data)  # 你需要提供该函数
 
