@@ -251,54 +251,58 @@ with col1:
 
 # ---------------------------- 右侧区域 ----------------------------
 with col2:
-    col3, col4 = st.columns(2)
+    st.subheader("病灶检测区")
     # -------------------- 上半部分：展示病灶掩膜 --------------------
-    
-    with col3:
-        st.subheader("病灶检测区")
-        if uploaded_file:
-            plt.imshow(slice_data.T, cmap="gray")  # 转置显示
-            st.pyplot(plt)
-            if st.button("生成病灶掩膜"):
-            # 假设你有一个封装好的病灶检测函数 `detect_lesion` 
-                lesion_mask = main(slice_data)  # 你需要提供该函数
+    left, middle1, middle2, right = st.columns(4, vertical_alignment="center")
+    left.subheader("当前切片")
+    middle1.button("Detect")
+    middle2.subheader("病灶检测结果")
+    right.subheader("叠加图")
+    if uploaded_file:
+        plt.figure(figsize=(5, 5))
+        plt.imshow(slice_data.T, cmap="gray")
+        left.pyplot(plt)
+   
+        if middle1.button("Detect"):
+        # 假设你有一个封装好的病灶检测函数 `detect_lesion` 
+            lesion_mask = main(slice_data)  # 你需要提供该函数
 
-            # 显示病灶掩膜
-            st.subheader("病灶检测结果")
-            plt.imshow(lesion_mask.T, cmap="hot")  # 热力图表示病灶掩膜
-            st.pyplot(plt)
-            
-            # 显示原图与病灶掩膜叠加图
-            st.subheader("原图与病灶掩膜叠加")
+        # 显示病灶掩膜
+            plt.figure(figsize=(5, 5))
+            plt.imshow(lesion_mask.T, cmap="gray")  # 热力图表示病灶掩膜
+            middle2.pyplot(plt)
+        
+        # 显示原图与病灶掩膜叠加图
             overlay = np.copy(slice_data)
             overlay[lesion_mask == 1] = 255  # 将病灶区域标记为 255
+            plt.figure(figsize=(5, 5))
             plt.imshow(overlay.T, cmap="hot")
-            st.pyplot(plt)
+            right.pyplot(plt)
 
-        else:
-            st.write("请先上传医学图像文件")
+    else:
+        st.write("请先上传医学图像文件")
     # -------------------- 下半部分：展示不同方向的切片 --------------------
-    with col4:
-        st.subheader("方向切片展示")
-        col41, col42, col43 = st.columns(3)
-        with col41:
-            st.subheader("Axial", text_align="center")
-            slice_num1 = st.slider("Loc", 0, depth - 1, depth // 2)
-            if uploaded_file:
-                plt.imshow(img_data[:, :, slice_num1].T, cmap="gray")
-                st.pyplot(plt)
-        with col42:
-            st.subheader("Coronal", text_align="center")
-            slice_num2 = st.slider("Loc", 0, height - 1, height // 2)
-            if uploaded_file:
-                plt.imshow(img_data[ :,slice_num2, :].T, cmap="gray")
-                st.pyplot(plt)
-        with col43:
-            st.subheader("Sagittal", text_align="center")
-            slice_num3 = st.slider("Loc", 0, width - 1, width // 2)
-            if uploaded_file:
-                plt.imshow(img_data[:, :, slice_num3].T, cmap="gray")
-                st.pyplot(plt)
+    
+    st.subheader("方向切片展示")
+    col21, col22, col23 = st.columns(3, border=True)
+    with col21:
+        st.subheader("Axial", text_align="center")
+        slice_num1 = st.slider("Loc", 0, depth - 1, depth // 2)
+        if uploaded_file:
+            plt.imshow(img_data[:, :, slice_num1].T, cmap="gray")
+            st.pyplot(plt)
+    with col22:
+        st.subheader("Coronal", text_align="center")
+        slice_num2 = st.slider("Loc", 0, height - 1, height // 2)
+        if uploaded_file:
+            plt.imshow(img_data[ :,slice_num2, :].T, cmap="gray")
+            st.pyplot(plt)
+    with col23:
+        st.subheader("Sagittal", text_align="center")
+        slice_num3 = st.slider("Loc", 0, width - 1, width // 2)
+        if uploaded_file:
+            plt.imshow(img_data[:, :, slice_num3].T, cmap="gray")
+            st.pyplot(plt)
         
 
 
