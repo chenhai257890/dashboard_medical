@@ -263,7 +263,7 @@ with col2:
    
         if b:
         # 假设你有一个封装好的病灶检测函数 `detect_lesion` 
-            lesion_mask = main(slice_data)  # 你需要提供该函数
+            lesion_mask = main(slice_data[None, :, :, :])  # 你需要提供该函数
 
         # 显示病灶掩膜
             plt.figure(figsize=(5, 5))
