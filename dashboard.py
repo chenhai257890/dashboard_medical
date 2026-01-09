@@ -178,8 +178,8 @@ def main(images):
     model_masked_autoencoder = create_model(config, image_level_cond=True)
 
     filename = "model090000.pt"
-    path_first_iter = bf.join('./model_save', experiment_name_first_iter, filename)
-    path_masked_autoencoder = bf.join('./model_save', experiment_name_masked_autoencoder, filename)
+    path_first_iter = bf.join('/mount/src/dashboard_medical/model_save', experiment_name_first_iter, filename)
+    path_masked_autoencoder = bf.join('/mount/src/dashboard_medical/model_save', experiment_name_masked_autoencoder, filename)
     model_first_iter.load_state_dict(
         th.load(path_first_iter, map_location=th.device('cpu'))
     )
