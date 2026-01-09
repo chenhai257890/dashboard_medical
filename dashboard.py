@@ -273,10 +273,10 @@ with col2:
             middle2.pyplot(plt)
         
         # 显示原图与病灶掩膜叠加图
-            overlay = np.copy(slice_data)
+            overlay = np.copy(np.reshape(slice_data, lesion_mask.squeeze().shape))
             overlay[lesion_mask.squeeze() == 1] = 255  # 将病灶区域标记为 255
             plt.figure(figsize=(5, 5))
-            plt.imshow(overlay.T, cmap="hot")
+            plt.imshow(overlay.squeeze().T, cmap="hot")
             right.pyplot(plt)
 
     else:
