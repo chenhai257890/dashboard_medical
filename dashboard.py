@@ -203,7 +203,7 @@ def main(images):
 
 
     num_iter = 0
-    for test_data_dict in test_loader:
+    for test_data_dict in enumerate(test_loader):
         test_data_input = test_data_dict[1].pop('input').cpu()
         brain_mask = test_data_dict[1].pop('brainmask').cpu()
         
