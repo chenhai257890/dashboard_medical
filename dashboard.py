@@ -282,23 +282,26 @@ with col2:
     else:
         st.write("请先上传医学图像文件")
     # -------------------- 下半部分：展示不同方向的切片 --------------------
+    st.empty()
+    st.empty()
+    st.empty()
     
     st.subheader("方向切片展示")
     col21, col22, col23 = st.columns(3, border=True)
     with col21:
-        st.subheader("Axial", text_align="center")
+        st.subheader("Axial", text_alignment="center")
         slice_num1 = st.slider("Loc", 0, depth - 1, depth // 2)
         if uploaded_file:
             plt.imshow(img_data[:, :, slice_num1].T, cmap="gray")
             st.pyplot(plt)
     with col22:
-        st.subheader("Coronal", text_align="center")
+        st.subheader("Coronal", text_alignment="center")
         slice_num2 = st.slider("Loc", 0, height - 1, height // 2)
         if uploaded_file:
             plt.imshow(img_data[ :,slice_num2, :].T, cmap="gray")
             st.pyplot(plt)
     with col23:
-        st.subheader("Sagittal", text_align="center")
+        st.subheader("Sagittal", text_alignment="center")
         slice_num3 = st.slider("Loc", 0, width - 1, width // 2)
         if uploaded_file:
             plt.imshow(img_data[:, :, slice_num3].T, cmap="gray")
