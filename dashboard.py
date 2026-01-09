@@ -230,7 +230,7 @@ col1, col2 = st.columns([1, 3])
 with col1:
     # 文件上传控件
     uploaded_file = st.file_uploader("上传 .nii.gz 文件", type=["nii.gz"])
-    slice_num = st.slider("Slice", 0, 154, 77)
+    slice_num = st.slider("Slice", 0, 154, 77, key="slider1")
     # 切片位置滑块
     if uploaded_file:
         # 读取 NIfTI 文件
@@ -288,19 +288,19 @@ with col2:
     col21, col22, col23 = st.columns(3, border=True)
     with col21:
         st.subheader("Axial", text_alignment="center")
-        slice_num1 = st.slider("Loc", 0, 239, 120)
+        slice_num1 = st.slider("Loc", 0, 154, 77, key="slider2")
         if uploaded_file:
             plt.imshow(img_data[:, :, slice_num1].T, cmap="gray")
             st.pyplot(plt)
     with col22:
         st.subheader("Coronal", text_alignment="center")
-        slice_num2 = st.slider("Loc", 0, 239, 120)
+        slice_num2 = st.slider("Loc", 0, 239, 120, key="slider3")
         if uploaded_file:
             plt.imshow(img_data[ :,slice_num2, :].T, cmap="gray")
             st.pyplot(plt)
     with col23:
         st.subheader("Sagittal", text_alignment="center")
-        slice_num3 = st.slider("Loc", 0, width - 1, width // 2)
+        slice_num3 = st.slider("Loc", 0, 239, 120, key="slider4")
         if uploaded_file:
             plt.imshow(img_data[:, :, slice_num3].T, cmap="gray")
             st.pyplot(plt)
