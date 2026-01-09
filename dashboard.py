@@ -82,9 +82,9 @@ def get_default_configs():
 def get_brats2021_train_transform_abnormalty(image_size):
     base_transform = [
         transforms.EnsureChannelFirstd(
-            keys=['input', 'brainmask', 'seg', 'gauss_mask'], channel_dim='no_channel'),
+            keys=['input', 'brainmask'], channel_dim='no_channel'),
         transforms.Resized(
-            keys=['input', 'brainmask', 'seg', 'gauss_mask'],
+            keys=['input', 'brainmask'],
             spatial_size=(image_size, image_size)),
     ]
     return transforms.Compose(base_transform)
@@ -243,34 +243,25 @@ with col1:
         depth, height, width = img_data.shape
         st.write(f"图像维度: {depth} x {height} x {width}")
 
-        # 切片位置滑块（控制当前选择的切片）
-        direction = st.radio("选择切片方向", ("横截面", "纵截面", "冠状面"))
         
-        if direction == "横截面":
-            slice_num = st.slider("选择横截面位置", 0, depth - 1, depth // 2)
-            slice_data = img_data[slice_num, :, :]
-        elif direction == "纵截面":
-            slice_num = st.slider("选择纵截面位置", 0, height - 1, height // 2)
-            slice_data = img_data[:, slice_num, :]
-        else:  # 冠状面
-            slice_num = st.slider("选择冠状面位置", 0, width - 1, width // 2)
-            slice_data = img_data[:, :, slice_num]
+        slice_num = st.slider("Slice", 0, width - 1, width // 2)
+        slice_data = img_data[:, :, slice_num]
 
-        # 显示切片信息
-        st.write(f"当前 {direction} 切片位置: {slice_num}")
-        plt.imshow(slice_data.T, cmap="gray")  # 转置显示
-        st.pyplot(plt)
+       
 
 # ---------------------------- 右侧区域 ----------------------------
 with col2:
+    col3, col4 = st.columns(2)
     # -------------------- 上半部分：展示病灶掩膜 --------------------
-    st.subheader("病灶检测")
     
-    # 病灶检测按钮
-    if uploaded_file:
-        if st.button("生成病灶掩膜"):
+    with col3:
+        st.subheader("病灶检测区")
+        if uploaded_file:
+            plt.imshow(slice_data.T, cmap="gray")  # 转置显示
+            st.pyplot(plt)
+            if st.button("生成病灶掩膜"):
             # 假设你有一个封装好的病灶检测函数 `detect_lesion` 
-            lesion_mask = main(slice_data)  # 你需要提供该函数
+                lesion_mask = main(slice_data)  # 你需要提供该函数
 
             # 显示病灶掩膜
             st.subheader("病灶检测结果")
@@ -284,37 +275,31 @@ with col2:
             plt.imshow(overlay.T, cmap="hot")
             st.pyplot(plt)
 
-    else:
-        st.write("请先上传医学图像文件")
-
+        else:
+            st.write("请先上传医学图像文件")
     # -------------------- 下半部分：展示不同方向的切片 --------------------
-    if uploaded_file:
-        st.subheader(f"显示 {direction} 切片位置: {slice_num} 的三个方向切片")
-
-        # 显示由滑块控制的切片位置的三个方向图
-        if direction == "横截面":
-            coronal_slice = img_data[:, slice_num, :]
-            sagittal_slice = img_data[slice_num, :, :]
-        elif direction == "纵截面":
-            coronal_slice = img_data[:, slice_num, :]
-            sagittal_slice = img_data[slice_num, :, :]
-        else:  # 冠状面
-            coronal_slice = img_data[:, :, slice_num]
-            sagittal_slice = img_data[slice_num, :, :]
-
-        # 显示其他方向的切片
-        st.subheader("横截面")
-        plt.imshow(sagittal_slice.T, cmap="gray")
-        st.pyplot(plt)
+    with col4:
+        st.subheader("方向切片展示")
+        col41, col42, col43 = st.columns(3)
+        with col41:
+            st.subheader("Axial", text_align="center")
+            slice_num1 = st.slider("Loc", 0, depth - 1, depth // 2)
+            if uploaded_file:
+                plt.imshow(img_data[:, :, slice_num1].T, cmap="gray")
+                st.pyplot(plt)
+        with col42:
+            st.subheader("Coronal", text_align="center")
+            slice_num2 = st.slider("Loc", 0, height - 1, height // 2)
+            if uploaded_file:
+                plt.imshow(img_data[ :,slice_num2, :].T, cmap="gray")
+                st.pyplot(plt)
+        with col43:
+            st.subheader("Sagittal", text_align="center")
+            slice_num3 = st.slider("Loc", 0, width - 1, width // 2)
+            if uploaded_file:
+                plt.imshow(img_data[:, :, slice_num3].T, cmap="gray")
+                st.pyplot(plt)
         
-        st.subheader("纵截面")
-        plt.imshow(coronal_slice.T, cmap="gray")
-        st.pyplot(plt)
-        
-        st.subheader("冠状面")
-        plt.imshow(img_data[:, :, slice_num].T, cmap="gray")
-        st.pyplot(plt)
-
 
 
 
