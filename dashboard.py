@@ -179,13 +179,13 @@ def main(images):
     path_first_iter = bf.join('./model_save', experiment_name_first_iter, filename)
     path_masked_autoencoder = bf.join('./model_save', experiment_name_masked_autoencoder, filename)
     model_first_iter.load_state_dict(
-        th.load(path_first_iter, map_location=th.device('cuda'))
+        th.load(path_first_iter, map_location=th.device('cpu'))
     )
-    model_first_iter.to(th.device('cuda'))
+    model_first_iter.to(th.device('cpu'))
     model_masked_autoencoder.load_state_dict(
-        th.load(path_masked_autoencoder, map_location=th.device('cuda'))
+        th.load(path_masked_autoencoder, map_location=th.device('cpu'))
     )
-    model_masked_autoencoder.to(th.device('cuda'))
+    model_masked_autoencoder.to(th.device('cpu'))
 
     if config.model.use_fp16:
         model_first_iter.convert_to_fp16()
@@ -202,8 +202,8 @@ def main(images):
 
     num_iter = 0
     for test_data_dict in enumerate(test_loader):
-        test_data_input = test_data_dict[1].pop('input').cuda()
-        brain_mask = test_data_dict[1].pop('brainmask').cuda()
+        test_data_input = test_data_dict[1].pop('input').cpu()
+        brain_mask = test_data_dict[1].pop('brainmask').cpu()
         
         final_mask, final_reconstruction = iter_mask_refinement(
                 model_masked_autoencoder, model_first_iter, test_data_input,
@@ -230,6 +230,7 @@ col1, col2 = st.columns([1, 3])
 with col1:
     # 文件上传控件
     uploaded_file = st.file_uploader("上传 .nii.gz 文件", type=["nii.gz"])
+    slider1 = st.slider
 
     # 切片位置滑块
     if uploaded_file:

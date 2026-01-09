@@ -26,14 +26,14 @@ def iter_mask_refinement(
         X, Y = np.ogrid[:test_data_input.shape[2], :test_data_input.shape[3]]
         radius = 15
         dist_from_center1 = np.sqrt((X - center[0]) ** 2 + (Y - center[1]) ** 2)
-        mask = th.from_numpy((dist_from_center1 < radius)).cuda()
+        mask = th.from_numpy((dist_from_center1 < radius)).cpu()
         mask = ~mask
         y_masked = mask * y_input
 
         abs_masked = th.abs(y_masked)
         abs = th.abs(y_input)
         angle = th.angle(y_input)
-        abs_ones = th.ones(abs.shape).cuda()
+        abs_ones = th.ones(abs.shape).cpu()
         abs_mask_zerotot1 = abs_masked * mask + abs_ones * ~mask
         fft_ = abs_mask_zerotot1 * th.exp((1j) * angle)
         img = fft.ifft2(fft.ifftshift(fft_))
@@ -48,7 +48,8 @@ def iter_mask_refinement(
         kthnum = mask_all_val.shape[0] * mask_all_val.shape[2] * mask_all_val.shape[3] - mask_all_val.sum() * 0.20
         thres_validation = th.kthvalue(loss_masked.flatten(), kthnum.int()).values
 
-        flag = th.ones([test_data_input.shape[0]]).cuda()
+        flag = th.ones([test_data_input.shape[0]]).cpu()
+
         final_reconstruction = th.zeros_like(test_data_input)
         final_mask = th.zeros_like(test_data_input)
         mask_inpaint_input = brain_mask
@@ -57,7 +58,7 @@ def iter_mask_refinement(
             if i == 0:
                 x0_pred_firststep = model_firststep(x_cond)
                 error_map = ((test_data_input - x0_pred_firststep) ** 2) * brain_mask
-                thres = th.zeros([test_data_input.shape[0]]).cuda()
+                thres = th.zeros([test_data_input.shape[0]]).cpu()
                 for num in range(test_data_input.shape[0]):
                     kthnum = brain_mask.shape[2] * brain_mask.shape[3] - brain_mask[num, :, :, :].sum() * 0.6
                     thres[num] = th.kthvalue(error_map[num, 0, :, :].flatten(), kthnum.int()).values
@@ -107,13 +108,13 @@ def iter_mask_refinement_bestthres(
                 X, Y = np.ogrid[:test_data_input.shape[2], :test_data_input.shape[3]]
                 radius = 15
                 dist_from_center1 = np.sqrt((X - center[0]) ** 2 + (Y - center[1]) ** 2)
-                mask = th.from_numpy((dist_from_center1 < radius)).cuda()
+                mask = th.from_numpy((dist_from_center1 < radius)).cpu()
                 mask = ~mask
                 y_masked = mask * y_input
                 abs_masked = th.abs(y_masked)
                 abs = th.abs(y_input)
                 angle = th.angle(y_input)
-                abs_ones = th.ones(abs.shape).cuda()
+                abs_ones = th.ones(abs.shape).cpu()
                 abs_mask_zerotot1 = abs_masked * mask + abs_ones * ~mask
                 fft_ = abs_mask_zerotot1 * th.exp((1j) * angle)
                 img = fft.ifft2(fft.ifftshift(fft_))
@@ -125,16 +126,16 @@ def iter_mask_refinement_bestthres(
 
                 dice_all_rat = th.zeros((test_data_input.shape[0], 6))
                 mask_plot_all_final = th.zeros((test_data_input.shape[0], test_data_input.shape[1],
-                                                test_data_input.shape[2], test_data_input.shape[3])).cuda()
+                                                test_data_input.shape[2], test_data_input.shape[3])).cpu()
                 img_pred_all_final = th.zeros((test_data_input.shape[0], test_data_input.shape[1],
-                                                test_data_input.shape[2], test_data_input.shape[3])).cuda()
+                                                test_data_input.shape[2], test_data_input.shape[3])).cpu()
                 mask_plot_all_rat = th.zeros((6, test_data_input.shape[0], test_data_input.shape[1],
-                                              test_data_input.shape[2], test_data_input.shape[3])).cuda()
+                                              test_data_input.shape[2], test_data_input.shape[3])).cpu()
                 img_plot_all_rat = th.zeros((6, test_data_input.shape[0], test_data_input.shape[1],
-                                            test_data_input.shape[2], test_data_input.shape[3])).cuda()
+                                            test_data_input.shape[2], test_data_input.shape[3])).cpu()
                 for rat in range(6):
                     error_map = error_map_first
-                    thres = th.zeros([test_data_input.shape[0]]).cuda()
+                    thres = th.zeros([test_data_input.shape[0]]).cpu()
                     for i in range(test_data_input.shape[0]):
                         kthnum = brain_mask.shape[2] * brain_mask.shape[3] - brain_mask[i, :, :, :].sum() * (
                                     0.9 - rat / 10)
@@ -144,8 +145,8 @@ def iter_mask_refinement_bestthres(
                                                                                       test_data_input.shape[2],
                                                                                       test_data_input.shape[3])
 
-                    dice_all = th.zeros((test_data_input.shape[0], 10000)).cuda()
-                    flag = th.ones([test_data_input.shape[0]]).cuda()
+                    dice_all = th.zeros((test_data_input.shape[0], 10000)).cpu()
+                    flag = th.ones([test_data_input.shape[0]]).cpu()
                     mask_inpaint_input = brain_mask
 
                     i = 0
