@@ -269,12 +269,12 @@ with col2:
 
         # 显示病灶掩膜
             plt.figure(figsize=(5, 5))
-            plt.imshow(lesion_mask.T, cmap="gray")  # 热力图表示病灶掩膜
+            plt.imshow(lesion_mask.squeeze().T, cmap="gray")  # 热力图表示病灶掩膜
             middle2.pyplot(plt)
         
         # 显示原图与病灶掩膜叠加图
             overlay = np.copy(slice_data)
-            overlay[lesion_mask == 1] = 255  # 将病灶区域标记为 255
+            overlay[lesion_mask.squeeze() == 1] = 255  # 将病灶区域标记为 255
             plt.figure(figsize=(5, 5))
             plt.imshow(overlay.T, cmap="hot")
             right.pyplot(plt)
