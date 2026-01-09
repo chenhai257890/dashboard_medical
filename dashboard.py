@@ -86,6 +86,7 @@ def get_brats2021_train_transform_abnormalty(image_size):
         transforms.Resized(
             keys=['input', 'brainmask'],
             spatial_size=(image_size, image_size)),
+        transforms.ToTensord(keys=['input', 'brainmask']),
     ]
     return transforms.Compose(base_transform)
 
@@ -99,8 +100,9 @@ class BraTS2021Dataset(Dataset):
     def __getitem__(self, index: int) -> tuple:
         image = self.images[index]
         brain_mask = (image > 0).astype(np.uint8)
+
         item = self.transforms(
-            {'input': input, 'brainmask': brain_mask})
+            {'input': image, 'brainmask': brain_mask})
 
         return item
 
@@ -201,7 +203,7 @@ def main(images):
 
 
     num_iter = 0
-    for test_data_dict in enumerate(test_loader):
+    for num, test_data_dict in enumerate(test_loader):
         test_data_input = test_data_dict[1].pop('input').cpu()
         brain_mask = test_data_dict[1].pop('brainmask').cpu()
         
