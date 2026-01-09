@@ -16,6 +16,7 @@ from test_model import iter_mask_refinement
 import nibabel as nib
 import matplotlib.pyplot as plt
 import io
+from scipy.ndimage import zoom
 # ---------------------------- 函数功能区 -----------------------------
 # 1、主函数
 def normalize(img, _min=None, _max=None):
@@ -273,7 +274,9 @@ with col2:
             middle2.pyplot(plt)
         
         # 显示原图与病灶掩膜叠加图
-            overlay = np.copy(np.reshape(slice_data, lesion_mask.squeeze().shape))
+
+            overlay = np.copy(slice_data)
+            overlay = zoom(overlay, (128 / overlay.shape[0], 128 / overlay.shape[1]))
             overlay[lesion_mask.squeeze() == 1] = 255  # 将病灶区域标记为 255
             plt.figure(figsize=(5, 5))
             plt.imshow(overlay.squeeze().T, cmap="hot")
