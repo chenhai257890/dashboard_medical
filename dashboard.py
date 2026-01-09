@@ -230,8 +230,7 @@ col1, col2 = st.columns([1, 3])
 with col1:
     # 文件上传控件
     uploaded_file = st.file_uploader("上传 .nii.gz 文件", type=["nii.gz"])
-    slider1 = st.slider
-
+    slice_num = st.slider("Slice", 0, 154, 77)
     # 切片位置滑块
     if uploaded_file:
         # 读取 NIfTI 文件
@@ -244,7 +243,6 @@ with col1:
         st.write(f"图像维度: {depth} x {height} x {width}")
 
         
-        slice_num = st.slider("Slice", 0, width - 1, width // 2)
         slice_data = img_data[:, :, slice_num]
 
        
@@ -285,18 +283,18 @@ with col2:
     st.empty()
     st.empty()
     st.empty()
-    
+
     st.subheader("方向切片展示")
     col21, col22, col23 = st.columns(3, border=True)
     with col21:
         st.subheader("Axial", text_alignment="center")
-        slice_num1 = st.slider("Loc", 0, depth - 1, depth // 2)
+        slice_num1 = st.slider("Loc", 0, 239, 120)
         if uploaded_file:
             plt.imshow(img_data[:, :, slice_num1].T, cmap="gray")
             st.pyplot(plt)
     with col22:
         st.subheader("Coronal", text_alignment="center")
-        slice_num2 = st.slider("Loc", 0, height - 1, height // 2)
+        slice_num2 = st.slider("Loc", 0, 239, 120)
         if uploaded_file:
             plt.imshow(img_data[ :,slice_num2, :].T, cmap="gray")
             st.pyplot(plt)
