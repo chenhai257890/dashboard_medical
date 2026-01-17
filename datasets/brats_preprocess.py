@@ -6,7 +6,7 @@ import numpy as np
 import nibabel as nib
 
 
-def nii2np_test(img_root, img_name, upper_per=0.9, lower_per=0.02, output_root_test='./datasets/data/test', modality=['t1'], slice_id=70):
+def nii2np_test(img_root, img_name, upper_per=0.9, lower_per=0.02, output_root_test='/mount/src/dashboard_medical/datasets/data/test', modality=['t1'], slice_id=70):
     '''generate image for each modality'''
     for mod_num in range(len(modality)):
         img_file = os.path.join(img_root, img_name)
