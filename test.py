@@ -77,7 +77,7 @@ def main():
             brain_mask, experiment_name_masked_autoencoder
         )
         """
-        #print(test_data_dict[0], type(test_data_dict[0]))
+        print(test_data_input.shape)
         final_mask, final_reconstruction = iter_mask_refinement(
             model_masked_autoencoder, model_first_iter, test_data_input,
             brain_mask, experiment_name_masked_autoencoder, test_data_dict[0]
@@ -85,6 +85,7 @@ def main():
         img_pred_mask_all[num_sample:num_sample + test_data_input.shape[0]] = final_mask.cpu().numpy()
         num_sample += test_data_input.shape[0]
         num_iter += 1
+        print(final_mask.shape)
     return final_mask
         
 
