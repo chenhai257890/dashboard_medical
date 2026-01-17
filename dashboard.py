@@ -182,11 +182,11 @@ def main(images):
     path_first_iter = bf.join('/mount/src/dashboard_medical/model_save', experiment_name_first_iter, filename)
     path_masked_autoencoder = bf.join('/mount/src/dashboard_medical/model_save', experiment_name_masked_autoencoder, filename)
     model_first_iter.load_state_dict(
-        th.load(path_first_iter, map_location=th.device('cpu'))
+        th.load(path_first_iter, map_location=th.device('cpu'), weights_only=False)
     )
     model_first_iter.to(th.device('cpu'))
     model_masked_autoencoder.load_state_dict(
-        th.load(path_masked_autoencoder, map_location=th.device('cpu'))
+        th.load(path_masked_autoencoder, map_location=th.device('cpu'), weights_only=False) 
     )
     model_masked_autoencoder.to(th.device('cpu'))
 
