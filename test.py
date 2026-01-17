@@ -35,15 +35,15 @@ def main():
     experiment_name_masked_autoencoder = "masked_autoencoder_brats_t1"
 
     input_mod = 't1'
-    test_loader = loader.get_data_loader('brats', './datasets/data', config, input_mod, split_set='test', generator=False)
+    test_loader = loader.get_data_loader('brats', '/mount/src/dashboard_medical/datasets/data', config, input_mod, split_set='test', generator=False)
 
     model_first_iter = create_model(config, image_level_cond=False)
     model_masked_autoencoder = create_model(config, image_level_cond=True)
 
 
     filename = "model090000.pt"
-    path_first_iter = bf.join('./model_save', experiment_name_first_iter, filename)
-    path_masked_autoencoder = bf.join('./model_save', experiment_name_masked_autoencoder, filename)
+    path_first_iter = bf.join('/mount/src/dashboard_medical/model_save', experiment_name_first_iter, filename)
+    path_masked_autoencoder = bf.join('/mount/src/dashboard_medical/model_save', experiment_name_masked_autoencoder, filename)
 
     model_first_iter.load_state_dict(
         th.load(path_first_iter, map_location=th.device('cpu'))
@@ -153,7 +153,7 @@ with col2:
    
         if b:
         # 假设你有一个封装好的病灶检测函数 `detect_lesion` 
-            nii2np_test('./data', uploaded_file.name, slice_id=slice_num)
+            nii2np_test('/mount/src/dashboard_medical/data', uploaded_file.name, slice_id=slice_num)
             lesion_mask = main()  # 你需要提供该函数
 
         # 显示病灶掩膜

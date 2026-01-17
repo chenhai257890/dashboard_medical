@@ -26,7 +26,7 @@ def get_data_loader(dataset, data_path, config, mod, split_set='train', generato
 def get_data_loader_brats(mod, path, batch_size, image_size, split_set: str = 'train'):
 
     assert split_set in ["train", "val", "test"]
-    default_kwargs = {"drop_last": True, "batch_size": batch_size, "pin_memory": False, "num_workers": 0,
+    default_kwargs = {"drop_last": True, "batch_size": 1, "pin_memory": False, "num_workers": 0,
                     "worker_init_fn": seed_worker, "generator": g, }
     if split_set == "test":
         patient_dir = os.path.join(path, 'test')
