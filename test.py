@@ -10,10 +10,10 @@ from pathlib import Path
 from datasets.brats_preprocess import nii2np_test
 from datasets import loader
 from configs import get_config
-
+sys.path.append('/mount/src/dashboard_medical')  # 确保路径正确
 from util.script_util import create_model
 from util.metrics import sensitivity_metric, precision_metric, dice_score
-sys.path.append(str(Path.cwd()))
+
 from torchmetrics.functional import structural_similarity_index_measure
 from models.test_model import iter_mask_refinement, validation_thres, iter_mask_refinement_bestthres
 import matplotlib.pyplot as plt
