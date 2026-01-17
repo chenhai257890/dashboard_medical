@@ -42,7 +42,7 @@ def validation_thres(
 
         loss = ((test_data_input - x0_pred_backward) ** 2)
         if iter_num != 0:
-            loss_load = th.load(os.path.join(logger.get_dir(), experiment_name_masked_autoencoder+'_loss_save.pt'))
+            loss_load = th.load(os.path.join('logger.get_dir()', experiment_name_masked_autoencoder+'_loss_save.pt'))
             loss_all = th.cat((loss_load, loss), dim=0)
             th.save(loss_all, os.path.join(logger.get_dir(), experiment_name_masked_autoencoder+'_loss_save.pt'))
         else:
@@ -83,8 +83,8 @@ def iter_mask_refinement(
         x_cond = x_mask_real
 
         ### loading error maps from validation set (for threshold choosing) ###
-        mask_all_val = th.load(os.path.join(logger.get_dir(), experiment_name_masked_autoencoder+'_mask_save.pt'))
-        loss_all_val = th.load(os.path.join(logger.get_dir(), experiment_name_masked_autoencoder+'_loss_save.pt'))
+        mask_all_val = th.load(os.path.join('/mount/src/dashboard_medical/model_save',experiment_name_masked_autoencoder, experiment_name_masked_autoencoder+'_mask_save.pt'))
+        loss_all_val = th.load(os.path.join('/mount/src/dashboard_medical/model_save',experiment_name_masked_autoencoder, experiment_name_masked_autoencoder+'_loss_save.pt'))
 
         loss_masked = loss_all_val * mask_all_val
         kthnum = mask_all_val.shape[0] * mask_all_val.shape[2] * mask_all_val.shape[3] - mask_all_val.sum() * 0.20
