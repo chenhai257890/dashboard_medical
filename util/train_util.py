@@ -10,8 +10,8 @@ from models.nn import mean_flat
 from torch.optim import AdamW
 from torch.utils.tensorboard import SummaryWriter
 
-from utils import logger
-from utils.fp16_util import MixedPrecisionTrainer
+from util import logger
+from util.fp16_util import MixedPrecisionTrainer
 from models.nn import update_ema
 
 
