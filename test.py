@@ -10,7 +10,7 @@ from pathlib import Path
 from datasets.brats_preprocess import nii2np_test
 from datasets import loader
 from configs import get_config
-from utils import logger
+
 from utils.script_util import create_model
 from utils.metrics import sensitivity_metric, precision_metric, dice_score
 sys.path.append(str(Path.cwd()))
