@@ -153,7 +153,7 @@ with col2:
    
         if b:
         # 假设你有一个封装好的病灶检测函数 `detect_lesion` 
-            nii2np_test('./data', file_path, slice_id=slice_num)
+            nii2np_test('./data', uploaded_file.name, slice_id=slice_num)
             lesion_mask = main()  # 你需要提供该函数
 
         # 显示病灶掩膜
