@@ -5,7 +5,7 @@ import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 
-from utils.fp16_util import convert_module_to_f16, convert_module_to_f32
+from util.fp16_util import convert_module_to_f16, convert_module_to_f32
 from models.nn import avg_pool_nd, conv_nd, linear, zero_module, normalization_bn
 from torch.autograd import Variable
 

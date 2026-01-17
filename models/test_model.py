@@ -3,8 +3,8 @@ import os
 import numpy as np
 import torch as th
 import torch.fft as fft
-from utils import logger
-from utils.metrics import dice_score
+from util import logger
+from util.metrics import dice_score
 import matplotlib.pyplot as plt
 def validation_thres(
         model,
