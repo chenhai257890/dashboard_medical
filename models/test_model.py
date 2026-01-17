@@ -5,7 +5,6 @@ import torch as th
 import torch.fft as fft
 from utils import logger
 from utils.metrics import dice_score
-import core.metrics as Metrics
 import matplotlib.pyplot as plt
 def validation_thres(
         model,
