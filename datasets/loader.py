@@ -43,7 +43,7 @@ def get_data_loader_brats(mod, path, batch_size, image_size, split_set: str = 't
         data_root=patient_dir,
         mode='train',
         patient_id=patient_id,
-        slice_num=slice_num,
+        slice_id=slice_num,
         input_modality=mod,
         transforms=transforms)
 
