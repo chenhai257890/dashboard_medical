@@ -26,7 +26,9 @@ def normalize(img, _min=None, _max=None):
     normalized_img = (img - _min) / (_max - _min)
     return normalized_img
 
-def main():
+def main(uploaded_file_name: str, slice_num: int):
+    patient_id = uploaded_file_name.split('.')[0]
+    slice_id = str(slice_num)
     #use_gpus = args.gpu_id
     #os.environ["CUDA_VISIBLE_DEVICES"] = str(use_gpus)
     config = get_config.file_from_dataset('brats')
@@ -35,7 +37,7 @@ def main():
     experiment_name_masked_autoencoder = "masked_autoencoder_brats_t1"
 
     input_mod = 't1'
-    test_loader = loader.get_data_loader('brats', '/mount/src/dashboard_medical/datasets/data', config, input_mod, split_set='test', generator=False)
+    test_loader = loader.get_data_loader('brats', '/mount/src/dashboard_medical/datasets/data', config, input_mod, split_set='test', generator=False, patient_id=patient_id, slice_num=slice_id)
 
     model_first_iter = create_model(config, image_level_cond=False)
     model_masked_autoencoder = create_model(config, image_level_cond=True)
@@ -154,8 +156,8 @@ with col2:
    
         if b:
         # 假设你有一个封装好的病灶检测函数 `detect_lesion` 
-            nii2np_test('/mount/src/dashboard_medical/data', uploaded_file.name, slice_id=slice_num)
-            lesion_mask = main()  # 你需要提供该函数
+            #nii2np_test('/mount/src/dashboard_medical/data', uploaded_file.name, slice_id=slice_num)
+            lesion_mask = main(uploaded_file.name, slice_num)  # 你需要提供该函数
 
         # 显示病灶掩膜
             plt.figure(figsize=(5, 5))

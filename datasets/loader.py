@@ -13,17 +13,17 @@ g = th.Generator()
 g.manual_seed(0)
 
 
-def get_data_loader(dataset, data_path, config, mod, split_set='train', generator=True):
+def get_data_loader(dataset, data_path, config, mod, split_set='train', generator=True, patient_id: str = None, slice_num: str = None):
     if dataset == 'brats':
         loader = get_data_loader_brats(mod, data_path, config.model.training.batch_size, config.model.image_size,
-                                           split_set=split_set)
+                                           split_set=split_set, patient_id=patient_id, slice_num=slice_num)
     else:
         raise Exception("Dataset does exit")
 
     return get_generator_from_loader(loader) if generator else loader
 
 
-def get_data_loader_brats(mod, path, batch_size, image_size, split_set: str = 'train'):
+def get_data_loader_brats(mod, path, batch_size, image_size, split_set: str = 'train', patient_id: str = None, slice_num: str = None):
 
     assert split_set in ["train", "val", "test"]
     default_kwargs = {"drop_last": True, "batch_size": 1, "pin_memory": False, "num_workers": 0,
@@ -42,6 +42,8 @@ def get_data_loader_brats(mod, path, batch_size, image_size, split_set: str = 't
     dataset = BraTS2021Dataset(
         data_root=patient_dir,
         mode='train',
+        patient_id=patient_id,
+        slice_num=slice_num,
         input_modality=mod,
         transforms=transforms)
 

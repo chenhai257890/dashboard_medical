@@ -19,23 +19,24 @@ def get_brats2021_train_transform_abnormalty(image_size):
 
 
 class BraTS2021Dataset(Dataset):
-    def __init__(self, data_root: str, mode: str, input_modality, transforms=None):
+    def __init__(self, data_root: str, mode: str, input_modality, patient_id: str, slice_id: str, transforms=None):
         super(BraTS2021Dataset, self).__init__()
 
         assert mode in ['train', 'test'], 'Unknown mode'
         self.mode = mode
         self.data_root = data_root
         self.input_modality = input_modality
-
+        self.patient_id = patient_id
+        self.slice_id = slice_id
         self.transforms = transforms
-        self.case_names_input = sorted(list(Path(os.path.join(self.data_root, input_modality)).iterdir()))
-        self.case_names_brainmask = sorted(list(Path(os.path.join(self.data_root, 'brainmask')).iterdir()))
+        self.case_names_input = sorted(list(Path(os.path.join(self.data_root, self.patient_id, self.slice_id, input_modality)).iterdir()))
+        self.case_names_brainmask = sorted(list(Path(os.path.join(self.data_root, self.patient_id, self.slice_id, 'brainmask')).iterdir()))
 
     def __getitem__(self, index: int) -> tuple:
         name_input = self.case_names_input[index].name
         name_brainmask = self.case_names_brainmask[index].name
-        base_dir_input = join(self.data_root, self.input_modality, name_input)
-        base_dir_brainmask = join(self.data_root, 'brainmask', name_brainmask)
+        base_dir_input = join(self.data_root, self.patient_id, self.slice_id, self.input_modality, name_input)
+        base_dir_brainmask = join(self.data_root, self.patient_id, self.slice_id, 'brainmask', name_brainmask)
 
         input = np.load(base_dir_input).astype(np.float32)
         brain_mask = np.load(base_dir_brainmask).astype(np.float32)
