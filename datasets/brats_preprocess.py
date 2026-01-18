@@ -37,5 +37,4 @@ def nii2np_test(img_root, img_name, upper_per=0.9, lower_per=0.02, output_root_t
             img_brainmask = (img_original > 0).astype(int)
             img_slice_brainmask = img_brainmask[:, :, slice_id]
             np.save(filename_brainmask, img_slice_brainmask)
-for img_name in ['BraTS2021_00000_t1.nii.gz', 'BraTS2021_00002_t1.nii.gz', 'BraTS2021_00003_t1.nii.gz']:
-        nii2np_test('F:/dashboard_medical/data', img_name, upper_per=0.9, lower_per=0.02, output_root_test='F:/dashboard_medical/datasets/data/test', modality=['t1'])
+
